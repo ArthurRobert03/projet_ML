@@ -48,12 +48,11 @@ res = gen[0].cpu().permute(1,2,0).detach().numpy()
 for step in range(10000):
     optimizer.zero_grad()
 
-    # forward (doit garder le graphe)
-    gen = model(x) # 1x3x512x512, supposé [-1,1]
+    gen = model(x) 
     gen_vis = utils.normalize_01(gen)
     # loss pixel (L1 est souvent mieux que MSE en visu)
-    #loss =  perceptual_loss(gen_vis, img)#+((gen_vis-img)**2).mean()*100 
-    loss = ((gen_vis-img)**2).mean()
+    #loss =  perceptual_loss(gen_vis, img)+((gen_vis-img)**2).mean()*100 
+    loss = ((gen_vis-img).abs()).mean()+((gen_vis-img)**2).mean()*10
     loss.backward()
 
     optimizer.step()
@@ -61,8 +60,6 @@ for step in range(10000):
 
     if step % 1 == 0:
         print(f"step {step} | loss = {loss.item():.4f}")
-
-
 
         image = gen_vis[0].cpu().permute(1,2,0).detach().numpy()
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
@@ -77,9 +74,6 @@ for step in range(10000):
         if (cv2.waitKey(1)==27):
             break
             
-
-
-
 
 with torch.no_grad():
     res = model(x)

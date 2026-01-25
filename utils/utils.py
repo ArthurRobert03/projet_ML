@@ -5,6 +5,7 @@ import torch
 def load_img(path):
     img = cv2.imread(path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = cv2.resize(img, (512,512))
     return img
 
 
@@ -16,6 +17,7 @@ def plot_img(img):
 def load_img_tensor(path, device):
     img = cv2.imread(path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = cv2.resize(img, (512,512))
     img = torch.tensor(img).to(device)
     img = img/255.0
     img = img.permute(2,0,1)
