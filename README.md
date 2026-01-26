@@ -2,11 +2,12 @@
 
 
 
-![Representative image](https://raw.githubusercontent.com/tkarras/progressive_growing_of_gans/master/representative_image_512x256.png)<br>
-**Picture:** Mettre la meilleure inversion
+![Representative image](data/presentation.png)<br>
+**Picture:** Résultats de l'inversion (Image de base à gauche et Inversion à droite)
 
 ## Description
 **PGGAN :**<br>
+
 PGGAN est un modèle génératif adversarial qui apprend à produire des images de haute qualité en augmentant progressivement leur résolution. L’entraînement débute sur des images de très basse résolution, ce qui permet au générateur et au discriminateur d’apprendre les structures globales de l’image. De nouvelles couches sont ensuite ajoutées au réseau pour affiner progressivement les détails à des résolutions plus élevées. Cette stratégie rend l’apprentissage plus stable et améliore significativement la qualité et le réalisme des images générées.
 
 **Inversion :**<br>
