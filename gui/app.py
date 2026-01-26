@@ -8,6 +8,8 @@ from PIL import Image, ImageTk
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import core.train as train
+import utils.utils as utils
 
 scriptpath = "../"
 sys.path.append(os.path.abspath(scriptpath))
@@ -28,12 +30,10 @@ class App(ctk.CTk):
 
         self.image = None
         self.photo = None
-        
-        self.model = train.init_model()
+        self.device = "cuda"
+        self.model = None
 
         self.build_ui()
-        self.z0, _ = self.model.buildNoiseData(1)
-        self.iter = 0
         self.alpha = {16:1.0, 64:0.0, 512:0.0}
 
     def build_ui(self):        
@@ -116,26 +116,28 @@ class App(ctk.CTk):
     # ==== ACTIONS ====
 
     def update_alpha1(self, value):
-        self.alpha['16'] = float(value)
+        self.alpha[16] = float(value)
         self.label_alpha1.configure(text=f"α1 = {value:.1f}")
+        self.model.set_alphas(self.alpha)
 
     def update_alpha2(self, value):
-        self.alpha['64'] = float(value)
+        self.alpha[64] = float(value)
         self.label_alpha2.configure(text=f"α2 = {value:.1f}")
+        self.model.set_alphas(self.alpha)
 
     def update_alpha3(self, value):
-        self.alpha['512'] = float(value)
+        self.alpha[512] = float(value)
         self.label_alpha3.configure(text=f"α3 = {value:.1f}")
+        self.model.set_alphas(self.alpha)
 
 
     def main_loop(self):
         if self.iter == 0:
-            img, loss, self.z_new = train.inv(self.image, self.model, self.z0)
-        else:
-            img, loss, self.z_new = train.inv(self.image, self.model, self.z_new)
+            self.model.random_start(50)
+        
+        loss, img = self.model.step()
             
-        img = ((img + 1) / 2).clamp(0, 1)
-        img = img.permute(1, 2, 0).cpu().numpy()
+        
         img = (img * 255).astype(np.uint8)
         img = Image.fromarray(img)
             
@@ -170,6 +172,8 @@ class App(ctk.CTk):
 
             # Charger et redimensionner
             self.image = Image.open(path).resize((512, 512))
+            img_tensor = utils.load_img_tensor(path, self.device).unsqueeze(0)
+            self.model = train.Inversor(img_tensor)
 
             # Créer un CTkImage
             self.ctk_image = ctk.CTkImage(self.image, size=(512, 512))
@@ -179,6 +183,7 @@ class App(ctk.CTk):
 
             self.iter = 0
             self.loss = []
+            
 
     def inv_action(self):
         if not self.running and self.iter == 0:

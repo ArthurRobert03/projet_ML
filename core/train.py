@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 import torch.nn.functional as F
-import utils.loss as loss
+import utils.loss as loss_criterion
 
 device = "cuda"
 
@@ -19,7 +19,7 @@ class Inversor:
         self.parser = model_loader.FaceParsingManager(weight_path='my_models/79999_iter.pth', device=device)
         self.face_mask = self.parser.get_mask(img)
         self.x = torch.randn(1, 512, device=device, dtype=torch.float32, requires_grad=True)
-        self.optimizer = torch.optim.Adam([x], lr=0.05)
+        self.optimizer = torch.optim.Adam([self.x], lr=0.05)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=1000, gamma=0.5)
         self.alphas = {64:0.2, 512:0.8}
 
@@ -32,22 +32,24 @@ class Inversor:
             gen_vis = utils.normalize_01(gen)  
 
             alphas = {64:1}
-            loss = loss.multiscale_loss(gen_vis, self.img_target, alphas, mask = self.face_mask, mode="area")
-            if loss < best_loss:
+            loss = loss_criterion.multiscale_loss(gen_vis, self.img_target, alphas, mask = self.face_mask, mode="area")
+            if loss.item() < best_loss:
                 best_loss = loss
                 self.x = z
+        self.optimizer = torch.optim.Adam([self.x], lr=0.05)
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=1000, gamma=0.5)
 
 
     def step(self):
         self.optimizer.zero_grad()
-        gen = self.model(x)                 
+        gen = self.model(self.x)                 
         gen_vis = utils.normalize_01(gen)  
-        loss = loss.multiscale_loss(gen, self.img_target, self.alphas,mask = self.face_mask, mode="area")
+        loss = loss_criterion.multiscale_loss(gen, self.img_target, self.alphas,mask = self.face_mask, mode="area")
         loss.backward()
         self.optimizer.step()
         self.scheduler.step()
 
-        return loss.item(), gen_vis.detach().cpu().permute(1,2,0).numpy()
+        return loss.item(), gen_vis[0].detach().cpu().permute(1,2,0).numpy()
     
 
     def set_alphas(self, alphas):
