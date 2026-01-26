@@ -15,25 +15,14 @@ L’inversion d’un modèle génératif consiste à retrouver, à partir d’un
 
 ## Structure
 
-projet_ML/
-├── config/
-│ ├── train_config.yaml # Paramètres d'entraînement
-│ ├── model_config.yaml # Paramètres du modèle
-│ └── data_config.yaml # Paramètres des données
-├── core/
-│ ├── train.py # Script principal d'entraînement
-│ ├── evaluate.py # Évaluation des modèles
-│ ├── data_preparation.py # Préparation et nettoyage des données
-│ └── inversion.py # Inversion de vecteur latent
-├── data/
-│ ├── raw/ # Données brutes
-│ └── processed/ # Données prêtes à l'entraînement
-├── gui/
-│ └── visualize.py # Visualisation des résultats
-├── my_models/
-│ ├── pgan_generator.py # Générateur PGAN
-│ └── pgan_discriminator.py # Discriminateur PGAN
-├── utils/
-│ ├── metrics.py # Fonctions métriques
-│ └── preprocessing.py # Fonctions de preprocessing
-└── README.md
+| Fichier | Description |Fonctions |
+|----|-------------|----------------------|
+| `core/train.py` | Script principal pour l’entraînement des modèles PGGAN | Trainer, train, save_checkpoint |
+| `core/evaluate.py` | Évaluation des modèles sur les jeux de test | Evaluator, compute_metrics, generate_samples |
+| `core/data_preparation.py` | Prépare et nettoie les données pour l’entraînement | load_data, normalize_data, split_dataset | 
+| `core/inversion.py`| Inversion d’un vecteur latent à partir d’une image cible	| invert_image, latent_optimization, compute_loss | 
+| `my_models/pgan_generator.py` | Définition du générateur PGGAN | PGANGenerator, forward | 
+| `my_models/pgan_discriminator.py` | Définition du discriminateur PGGAN | PGANDiscriminator, forward |
+| `utils/preprocessing.py` | Fonctions utilitaires pour le prétraitement des données | resize_images, normalize, augment_data | 
+| `utils/metrics.py` | Calcul des métriques et pertes pour l’entraînement et l’évaluation | compute_mse, compute_lpips, compute_fid | 
+| `gui/visualize.py` | Visualisation des images reconstruites | gui.app |
