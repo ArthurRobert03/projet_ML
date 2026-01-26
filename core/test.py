@@ -4,19 +4,10 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
+import my_models.load_model as model_loader
 
 device = "cuda"
 import torch.nn.functional as F
-
-
-# ---------- multi-scale helpers ----------
-
-def downscale_pyramid(img, sizes=(256, 128, 64, 32), mode="area"):
-    """
-    img: (N,3,H,W)
-    retourne dict {size: (N,3,size,size)}
-    """
-    return {s: F.interpolate(img, size=(s, s), mode=mode) for s in sizes}
 
 
 def create_face_mask(img_tensor, pad_ratio=0.1):
@@ -118,25 +109,22 @@ def stack_for_display(imgs_by_res, bgr=True, pad_value=0):
 
 def get_alphas(step):
     if step < 500:
-        return {16:0.9, 64:0.1, 512:0.0}
+        return {16:0.9, 64:0.1, 128:0.0}
     elif step < 1000:
-        return {16:0.2, 64:0.7, 512:0.1}
+        return {16:0.2, 64:0.7, 128:0.1}
     elif step < 3000:
-        return {16:0.0, 64:0.4, 512:0.6}
+        return {16:0.0, 64:0.4, 128:0.6}
     else:
-        return {16:0.0, 64:0.1, 512:0.9}
+        return {16:0.0, 64:0.1, 128:0.9}
 # ---------- model ----------
 model = get_model()
 model = model.netG
 model.eval()
 #MTCNN
-img = utils.load_img_tensor("data/48.png", device).unsqueeze(0)  # (1,3,512,512)
+img = utils.load_img_tensor("data/aziz3.jpg", device).unsqueeze(0)  # (1,3,512,512)
 #img_masque = utils.load_img_tensor("data/39_masque.png", device).unsqueeze(0)
 img_target = (img*2)-1
-
-
-
-parser = utils.FaceParsingManager(weight_path='my_models/79999_iter.pth', device=device)
+parser = model_loader.FaceParsingManager(weight_path='my_models/79999_iter.pth', device=device)
 
 # Création du masque (include_hair=False pour se focaliser sur le visage seul)
 face_mask = parser.get_mask(img, include_hair=False)
@@ -160,13 +148,8 @@ for k in range(50):
         x = z
 
 optimizer = torch.optim.Adam([x], lr=0.05)
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1000, gamma=0.5)
+#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1000, gamma=0.5)
 
-alphas = {
-    512: 1.0,
-    64:  0.6,
-    16:  0.6
-}
 
 for step in range(10000):
     optimizer.zero_grad()
@@ -180,7 +163,7 @@ for step in range(10000):
     loss.backward()
 
     optimizer.step()
-    scheduler.step()
+    #scheduler.step()
 
     if step % 1 == 0:
         print(f"step {step} | loss = {loss.item():.4f}")
