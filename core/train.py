@@ -12,7 +12,7 @@ from torchvision.models import vgg16, VGG16_Weights
 
 #vgg = vgg16(weights=VGG16_Weights.IMAGENET1K_FEATURES).features[:16].eval().to(device)
 
-vgg = vgg16(weights=VGG16_Weights).features[:16].eval().to(device)
+vgg = vgg16(weights=VGG16_Weights.IMAGENET1K_V1).features[:16].eval().to(device)
 
 
 
@@ -33,7 +33,7 @@ model = model.netG
 model.eval()
 
 
-img = utils.load_img_tensor("data/Camar.jpg", device)
+img = utils.load_img_tensor("data/39.png", device)
 img = img.unsqueeze(0)
 
 x = torch.randn(1, 512, device=device, dtype=torch.float32, requires_grad=True)
@@ -51,8 +51,8 @@ for step in range(10000):
     gen = model(x) 
     gen_vis = utils.normalize_01(gen)
     # loss pixel (L1 est souvent mieux que MSE en visu)
-    #loss =  perceptual_loss(gen_vis, img)+((gen_vis-img)**2).mean()*100 
-    loss = ((gen_vis-img).abs()).mean()+((gen_vis-img)**2).mean()*10
+    loss =  perceptual_loss(gen_vis, img) +((gen_vis-img)**2).mean()*10 
+    #loss = ((gen_vis-img).abs()).mean()+((gen_vis-img)**2).mean()*10
     loss.backward()
 
     optimizer.step()

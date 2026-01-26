@@ -18,19 +18,76 @@ def downscale_pyramid(img, sizes=(256, 128, 64, 32), mode="area"):
     """
     return {s: F.interpolate(img, size=(s, s), mode=mode) for s in sizes}
 
-def multiscale_loss(gen, tgt, alphas, mode="area"):
+
+def create_face_mask(img_tensor, pad_ratio=0.1):
     """
-    gen,tgt: (N,3,512,512) dans le même espace (ici gen_vis et img)
-    alphas: dict {size: poids}
+    Crée un masque binaire (1 sur le visage, 0 ailleurs).
+    img_tensor: (1, 3, H, W) sur GPU ou CPU, range quelconque
+    Retourne: (1, 3, H, W) tensor binaire sur le même device
     """
+    # 1. Conversion Tensor -> Numpy uint8 pour OpenCV
+    # On suppose que l'image est normalisée, on la remet en [0, 255]
+    im_temp = img_tensor.detach().cpu()
+    if im_temp.min() < 0: # Si range [-1, 1]
+        im_temp = (im_temp + 1) / 2
+    
+    im_np = im_temp[0].permute(1, 2, 0).numpy()
+    im_np = (im_np * 255).astype(np.uint8)
+    
+    # 2. Détection de visage (Haar Cascade)
+    # Ce fichier xml est inclus dans cv2 par défaut
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    gray = cv2.cvtColor(im_np, cv2.COLOR_RGB2GRAY)
+    faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+
+    # 3. Création du masque
+    mask = np.zeros_like(gray, dtype=np.float32) # Fond noir
+
+    if len(faces) > 0:
+        # On prend le plus grand visage trouvé
+        faces = sorted(faces, key=lambda x: x[2]*x[3], reverse=True)
+        (x, y, w, h) = faces[0]
+        
+        # On dessine une ellipse (plus naturel qu'un rectangle pour un visage)
+        center = (x + w//2, y + h//2)
+        axes = (int(w/2 * (1+pad_ratio)), int(h/2 * (1+pad_ratio))) # Un peu plus large
+        cv2.ellipse(mask, center, axes, 0, 0, 360, 1.0, -1) 
+    else:
+        print("Attention : Aucun visage détecté, le masque est plein (1.0).")
+        mask[:] = 1.0 # Fallback : on prend tout si pas de visage
+
+    # 4. Conversion Numpy -> Tensor (N, C, H, W)
+    # On duplique le masque sur les 3 canaux de couleur pour faciliter la multiplication
+    mask_t = torch.from_numpy(mask).to(img_tensor.device)
+    mask_t = mask_t.unsqueeze(0).unsqueeze(0).repeat(1, 3, 1, 1)
+    
+    return mask_t
+
+
+def multiscale_loss(gen, tgt, alphas, mask=None, mode="area"):
     loss = 0.0
     for s, a in alphas.items():
+        # Redimensionner l'image et la cible
         g = F.interpolate(gen, size=(s, s), mode=mode)
         t = F.interpolate(tgt, size=(s, s), mode=mode)
-        # tu peux choisir L1 / L2, ici je garde ton mix
-        loss_s = (g - t).abs().mean() + 10.0 * ((g - t) ** 2).mean()
+        
+        diff = (g - t).abs() + 10.0 * ((g - t) ** 2)
+        
+        # --- APPLIQUER LE MASQUE ---
+        if mask is not None:
+            # On redimensionne le masque à la taille s (Nearest pour garder 0 ou 1 pur, ou Area pour du soft)
+            m = F.interpolate(mask, size=(s, s), mode="nearest")
+            
+            # On multiplie la différence par le masque
+            # Les pixels hors visage (0) ne compteront pas dans la loss
+            diff = diff * m
+            
+        loss_s = diff.mean()
         loss = loss + a * loss_s
     return loss
+
+
+    
 
 def stack_for_display(imgs_by_res, bgr=True, pad_value=0):
     """
@@ -60,34 +117,44 @@ def stack_for_display(imgs_by_res, bgr=True, pad_value=0):
     return cv2.vconcat(rows)
 
 def get_alphas(step):
-    # phases (à toi de régler)
-    if step < 1000:
-        return {16:1.0, 64:0.8, 128:0.3, 256:0.1, 512:0.0}
+    if step < 500:
+        return {16:0.9, 64:0.1, 512:0.0}
+    elif step < 1000:
+        return {16:0.2, 64:0.7, 512:0.1}
     elif step < 3000:
-        return {16:0.5, 64:0.8, 128:0.6, 256:0.3, 512:0.1}
-    elif step < 6000:
-        return {16:0.2, 64:0.5, 128:0.7, 256:0.7, 512:0.5}
+        return {16:0.0, 64:0.4, 512:0.6}
     else:
-        return {16:0.1, 64:0.2, 128:0.4, 256:0.7, 512:1.0}
+        return {16:0.0, 64:0.1, 512:0.9}
 # ---------- model ----------
 model = get_model()
 model = model.netG
 model.eval()
+#MTCNN
+img = utils.load_img_tensor("data/48.png", device).unsqueeze(0)  # (1,3,512,512)
+#img_masque = utils.load_img_tensor("data/39_masque.png", device).unsqueeze(0)
+img_target = (img*2)-1
 
-img = utils.load_img_tensor("data/test.jpg", device).unsqueeze(0)  # (1,3,512,512)
+
+
+parser = utils.FaceParsingManager(weight_path='my_models/79999_iter.pth', device=device)
+
+# Création du masque (include_hair=False pour se focaliser sur le visage seul)
+face_mask = parser.get_mask(img, include_hair=False)
+
+# Vérification visuelle du masque au démarrage
 
 x = torch.randn(1, 512, device=device, dtype=torch.float32, requires_grad=True)
 
 best_loss = float('inf')
 x = torch.randn(1, 512, device=device, dtype=torch.float32, requires_grad=True)
-for k in range(1000):
+for k in range(50):
     z = torch.randn(1, 512, device=device, dtype=torch.float32, requires_grad=True)
     gen = model(z)                 # (1,3,512,512) brut
     gen_vis = utils.normalize_01(gen)  # (1,3,512,512) en [0,1] (comme toi)
 
     # multi-scale loss (avec alpha par résolution)
-    alphas = get_alphas(10000)
-    loss = multiscale_loss(gen_vis, img, alphas, mode="area")
+    alphas = get_alphas(0)
+    loss = multiscale_loss(gen_vis, img, alphas, mask = face_mask, mode="area")
     if loss < best_loss:
         best_loss = loss
         x = z
@@ -95,11 +162,8 @@ for k in range(1000):
 optimizer = torch.optim.Adam([x], lr=0.05)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1000, gamma=0.5)
 
-# résolutions + poids (alpha par résolution)
 alphas = {
     512: 1.0,
-    256: 0.7,
-    128: 0.6,
     64:  0.6,
     16:  0.6
 }
@@ -112,7 +176,7 @@ for step in range(10000):
 
     # multi-scale loss (avec alpha par résolution)
     alphas = get_alphas(step)
-    loss = multiscale_loss(gen_vis, img, alphas, mode="area")
+    loss = multiscale_loss(gen, img_target, alphas,mask = face_mask, mode="area")
     loss.backward()
 
     optimizer.step()
@@ -123,13 +187,14 @@ for step in range(10000):
 
         # --- affichage : chaque résolution empilée verticalement (target / gen / diff) ---
         with torch.no_grad():
-            tgts = {s: F.interpolate(img, size=(s,s), mode="area") for s in alphas.keys()}
+            tgts = {s: F.interpolate(img*0.3+img*face_mask, size=(s,s), mode="area") for s in alphas.keys()}
             gens = {s: F.interpolate(gen_vis, size=(s,s), mode="area") for s in alphas.keys()}
+            diffs = {s: F.interpolate(gen_vis*face_mask, size=(s,s), mode="area") for s in alphas.keys()}
 
         # tensors -> numpy RGB [0,1]
         tgts_np = {s: tgts[s][0].detach().cpu().permute(1,2,0).numpy() for s in tgts}
         gens_np = {s: gens[s][0].detach().cpu().permute(1,2,0).numpy() for s in gens}
-        diff_np = {s: np.abs(tgts_np[s] - gens_np[s]) for s in tgts_np}
+        diff_np = {s: diffs[s][0].detach().cpu().permute(1,2,0).numpy() for s in diffs}
 
         panel_t = stack_for_display(tgts_np, bgr=True)
         panel_g = stack_for_display(gens_np, bgr=True)
