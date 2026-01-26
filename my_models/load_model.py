@@ -49,7 +49,7 @@ class FaceParsingManager:
         atts = ['skin', 'l_brow', 'r_brow', 'l_eye', 'r_eye', 'eye_g', 'l_ear', 'r_ear', 'ear_r',
                 'nose', 'mouth', 'u_lip', 'l_lip', 'neck', 'neck_l', 'cloth', 'hair', 'hat']
         self.face_parts = [1, 2, 3, 4, 5, 6,7,8, 9, 10, 11, 12, 13, 14, 15, 17, 16]
-        self.part_weight = [0.0,0.5,0.8,0.8,2,2,3,3,0.8,0.8,1,1,1,1,0.5,0.5,0.2,0.3,0.05]
+        self.part_weight = [0,0.5,0.8,0.8,2,2,3,3,0.8,0.8,1,1,1,1,0.5,0.5,0.2,0.3,0.05]
 
     def get_mask(self, img_tensor, include_hair=False):
         """

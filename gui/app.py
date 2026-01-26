@@ -27,12 +27,12 @@ class App(ctk.CTk):
 
         self.title("GUI Inversion")
         self.geometry("1500x900")
+        
 
         self.image = None
         self.photo = None
         self.device = "cuda"
         self.model = None
-
         self.build_ui()
         self.alpha = {16:1.0, 64:0.0, 512:0.0}
 
