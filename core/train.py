@@ -22,6 +22,7 @@ class Inversor:
         self.optimizer = torch.optim.Adam([self.x], lr=0.1)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=500, gamma=0.8)
         self.alphas = {64:0.2, 512:0.8}
+        self.precision = False
 
     def random_start(self, n_random = 50):
         
@@ -44,12 +45,19 @@ class Inversor:
         self.optimizer.zero_grad()
         gen = self.model(self.x)                 
         gen_vis = utils.normalize_01(gen)  
-        loss = loss_criterion.multiscale_loss(gen, self.img_target, self.alphas,mask = self.face_mask, mode="area")
+        if self.precision:
+            gen_mask = self.parser.get_mask_grad(gen_vis)
+        if not self.precision:
+            loss = loss_criterion.multiscale_loss(gen, self.img_target, self.alphas,mask = self.face_mask, mode="area")
+        else:
+            loss = loss_criterion.multiscale_loss_double_mask(gen, self.img_target, self.alphas, self.face_mask, gen_mask, )
         loss.backward()
         self.optimizer.step()
         self.scheduler.step()
-        if self.mask:
-            return loss.item(), (gen_vis*self.face_mask)[0].detach().cpu().permute(1,2,0).numpy()
+        if self.mask and not self.precision:
+            return loss.item(), (self.face_mask)[0].detach().cpu().permute(1,2,0).numpy()
+        elif self.mask and self.precision:
+            return loss.item(), (gen_mask)[0].detach().cpu().permute(1,2,0).numpy()
         else:
             return loss.item(), gen_vis[0].detach().cpu().permute(1,2,0).numpy()
 
@@ -61,3 +69,6 @@ class Inversor:
 
     def set_alphas(self, alphas):
         self.alphas = alphas
+
+    def set_precision(self):
+        self.precision = not self.precision

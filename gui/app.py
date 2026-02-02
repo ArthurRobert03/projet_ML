@@ -20,7 +20,7 @@ class App(ctk.CTk):
         self.iter = 0
         self.loaded = False
 
-        self.title("GUI Inversion")
+        
         self.geometry("1500x900")
         
 
@@ -29,6 +29,8 @@ class App(ctk.CTk):
         with open("config/config.json", "r") as f:
             self.json_data = json.load(f)
         self.device = self.json_data["device"]
+
+        self.title("GUI Inversion " + self.device)
         self.model = None
         self.build_ui()
         self.alpha = {16:1.0, 64:0.0, 512:0.0}
@@ -73,6 +75,7 @@ class App(ctk.CTk):
         ctk.CTkButton(btn_frame, text="Resume", command=self.resume, width=100).pack(pady=20)
         ctk.CTkButton(btn_frame, text="Stop", command=self.stop_action, width=100).pack(pady=20)
         ctk.CTkButton(btn_frame, text="Show Mask", command=self.toggle_mask, width=100).pack(pady=20)
+        ctk.CTkButton(btn_frame, text="Precision mode (BETA)", command=self.mode_precision, width=100).pack(pady=20)
 
         # ==== ZONE TARGET ====
         self.target_frame = ctk.CTkFrame(self, width=512, height=512, corner_radius=5)
@@ -186,9 +189,6 @@ class App(ctk.CTk):
 
     def inv_action(self):
         if not self.running and self.iter == 0 and self.loaded:
-            self.slider1.configure(state="disabled")
-            self.slider2.configure(state="disabled")
-            self.slider3.configure(state="disabled")
             self.running = True
             self.after(1, self.main_loop)
 
@@ -208,6 +208,9 @@ class App(ctk.CTk):
     def stop_action(self):
         if self.iter > 0:
             self.running = False
+
+    def mode_precision(self):
+        self.model.set_precision()
 
 if __name__ == "__main__":
     app = App()

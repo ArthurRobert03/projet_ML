@@ -4,8 +4,13 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 import os
+import json
 
 use_gpu = True if torch.cuda.is_available() else False
+
+with open("config/config.json", "r") as f:
+    json_data = json.load(f)
+use_gpu = json_data["device"] == "cuda"
 
 # trained on high-quality celebrity faces "celebA" dataset
 # this model outputs 512 x 512 pixel images
@@ -93,6 +98,35 @@ class FaceParsingManager:
         mask = F.interpolate(mask, size=(h, w), mode='nearest')
         mask = mask.repeat(1, 3, 1, 1) # (1, 3, H, W)
 
+        return mask
+    
+    def get_mask_grad(self, img_tensor, include_hair=False, temperature=0.7):
+        """
+        img_tensor: (1,3,H,W) en [-1,1] ou [0,1]
+        return: (1,3,H,W) masque soft différentiable wrt img_tensor
+        """
+        h, w = img_tensor.shape[2], img_tensor.shape[3]
+
+        x = img_tensor
+        if x.min() < 0:
+            x = (x + 1) / 2  # -> [0,1]
+
+        x = F.interpolate(x, size=(512,512), mode='bilinear', align_corners=False)
+        x = (x - self.mean) / self.std
+
+        # PAS de no_grad, PAS de argmax
+        logits = self.net(x)[0]  # (1,19,512,512)
+        probs = torch.softmax(logits / temperature, dim=1)  # diff
+
+        parts = self.face_parts + ([17] if include_hair else [])
+        mask = 0.0
+        for part_idx in parts:
+            wgt = float(self.part_weight[part_idx])
+            mask = mask + wgt * probs[:, part_idx:part_idx+1]  # (1,1,512,512)
+
+        mask = mask.clamp(0,1)
+        mask = F.interpolate(mask, size=(h,w), mode='bilinear', align_corners=False)
+        mask = mask.repeat(1,3,1,1)
         return mask
 
 

@@ -14,3 +14,20 @@ def multiscale_loss(gen, tgt, alphas, mask=None, mode="area"):
         loss_s = diff.mean()
         loss = loss + a * loss_s
     return loss
+
+
+def multiscale_loss_double_mask(gen, tgt, alphas, mask1=None, mask2 = None, mode="area"):
+    loss = 0.0
+    for s, a in alphas.items():
+        # Redimensionner l'image et la cible
+        g = F.interpolate(gen, size=(s, s), mode=mode)
+        t = F.interpolate(tgt, size=(s, s), mode=mode)  
+        diff = (g - t).abs() + 10.0 * ((g - t) ** 2) 
+        m1 = F.interpolate(mask1, size=(s, s), mode="nearest")
+        m2 = F.interpolate(mask2, size=(s, s), mode="nearest")
+
+        diff = diff * m1
+        diff_m = ((m1-m2)*(m2>0.4)).abs().mean()
+        loss_s = diff.mean()
+        loss = loss + diff_m*a + loss_s*a
+    return loss
