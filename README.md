@@ -18,12 +18,12 @@ L’inversion d’un modèle génératif consiste à retrouver, à partir d’un
 
 La version stable de python à utiliser est la 3.12 et les packages requis sont :
 
-'''
+```
 conda install torchvision numpy matplotlib pillow
-'''
-'''
+```
+```
 pip install opencv-python customtkinter
-'''
+```
 
 ## Structure
 
