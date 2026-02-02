@@ -3,7 +3,7 @@
 
 
 ![Representative image](data/presentation.png)<br>
-**Picture:** Résultats de l'inversion (Image de base à gauche et Inversion à droite)
+**Picture:** Résultats de l'inversion (Image de base en haut et Inversion en bas)
 
 ## Description
 **PGGAN :**<br>
