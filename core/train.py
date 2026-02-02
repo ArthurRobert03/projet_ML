@@ -52,7 +52,12 @@ class Inversor:
         self.scheduler.step()
 
         return loss.item(), gen_vis[0].detach().cpu().permute(1,2,0).numpy()
-    
+
+    def toggle_mask(self):
+        self.mask = not self.mask
+
+    def get_mask(self):
+        return self.face_mask
 
     def set_alphas(self, alphas):
         self.alphas = alphas
