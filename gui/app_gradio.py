@@ -5,8 +5,9 @@ import cv2
 
 from core.train import Inversor  # adapte si le fichier a un autre nom
 
-device = "cpu"
-
+with open("config/config.json", "r") as f:
+    json_data = json.load(f)
+device = json_data["device"]
 
 # -------- Utils --------
 def preprocess_image(img):
@@ -107,3 +108,4 @@ with gr.Blocks() as demo:
     )
 
 demo.launch()
+
