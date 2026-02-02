@@ -73,6 +73,7 @@ class App(ctk.CTk):
         ctk.CTkButton(btn_frame, text="Qual", command=self.qual_action, width=100).pack(pady=20)
         ctk.CTkButton(btn_frame, text="Resume", command=self.resume, width=100).pack(pady=20)
         ctk.CTkButton(btn_frame, text="Stop", command=self.stop_action, width=100).pack(pady=20)
+        ctk.CTkButton(btn_frame, text="Show Mask", command=self.toggle_mask, width=100).pack(pady=20)
 
         # ==== ZONE TARGET ====
         self.target_frame = ctk.CTkFrame(self, width=512, height=512, corner_radius=5)
@@ -200,6 +201,9 @@ class App(ctk.CTk):
             self.running = True
             self.after(1, self.main_loop)
 
+    def toggle_mask(self):
+        self.model.toggle_mask()
+    
     def stop_action(self):
         if self.iter > 0:
             self.running = False
