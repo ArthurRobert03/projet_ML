@@ -8,7 +8,7 @@
 ## Description
 **PGGAN :**<br>
 
-PGGAN est un modèle génératif adversarial qui apprend à produire des images de haute qualité en augmentant progressivement leur résolution. L’entraînement débute sur des images de très basse résolution, ce qui permet au générateur et au discriminateur d’apprendre les structures globales de l’image. De nouvelles couches sont ensuite ajoutées au réseau pour affiner progressivement les détails à des résolutions plus élevées. Cette stratégie rend l’apprentissage plus stable et améliore significativement la qualité et le réalisme des images générées.
+PGGAN est un modèle génératif adversarial qui apprend à produire des images de haute qualité en augmentant progressivement leur résolution. L’entraînement débute sur des images de très basse résolution, ce qui permet au générateur et au discriminateur d’apprendre les structures globales de l’image. De nouvelles couches sont ensuite ajoutées au réseau pour affiner progressivement les détails à des résolutions plus élevées.  Au sein de chaque couche de convolution, une opération de type résiduelle est appliquée : l’image en entrée est réinjectée, après mise à l’échelle (upscaling ou downscaling), et combinée avec la sortie de la convolution dans la couche suivante. Cette stratégie rend l’apprentissage plus stable et améliore la qualité et le réalisme des images générées, en préservant certaines informations importantes tout au long de l’apprentissage et en facilitant la propagation des gradients.
 
 **Inversion :**<br>
 
