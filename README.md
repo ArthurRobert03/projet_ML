@@ -25,6 +25,11 @@ conda install torchvision numpy matplotlib pillow
 pip install opencv-python customtkinter
 ```
 
+Pour lancer l'interface GUI on utilise la commande :
+```
+python -m gui.app
+```
+
 ## Structure
 
 | Fichier | Description |Fonctions |
