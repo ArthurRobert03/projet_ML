@@ -11,10 +11,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import core.train as train
 import utils.utils as utils
 
-scriptpath = "../"
-sys.path.append(os.path.abspath(scriptpath))
-import core.train as train
-
 ctk.set_appearance_mode("Dark")  # Dark / Light
 ctk.set_default_color_theme("green")  # Thème vert
 
@@ -31,7 +27,9 @@ class App(ctk.CTk):
 
         self.image = None
         self.photo = None
-        self.device = "cuda"
+        with open("config/config.json", "r") as f:
+            self.json_data = json.load(f)
+        self.device = self.json_data["device"]
         self.model = None
         self.build_ui()
         self.alpha = {16:1.0, 64:0.0, 512:0.0}
