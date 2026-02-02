@@ -19,7 +19,7 @@ L’inversion d’un modèle génératif consiste à retrouver, à partir d’un
 La version stable de python à utiliser est la 3.12 et les packages requis sont :
 
 ```
-conda install torchvision numpy matplotlib pillow
+conda install torchvision numpy matplotlib pillow gradio
 ```
 ```
 pip install opencv-python customtkinter
@@ -36,6 +36,7 @@ python -m gui.app
 |----|-------------|----------------------|
 | `core/train.py` | Définit la classe Inversor pour l'inversion de l'image | Classe Inversor avec constructeur, random_start, step, set_alphas |
 | `gui/app.py` | Définit l'application pour l'interface utilisateur | Classe App avec constructeur, build_ui, update_alpha1, update_alpha2, update_alpha3, main_loop, load_image, inv_action, qual_action, resume, stop_action |
+| `gui/app_gradio.py` | Définit l'application web gradio pour l'interface utilisateur | Interfaceur web gradio, preprocess_image, init_inversor, random_start, run_optimization, set_alphas |
 | `my_models/load_model.py` | Définit la classe FaceParsingManager pour créer un masque de l'image afin de mettre en avant certaines parties du visage | get_model, get_model_256, Classe FaceParsingManager avec constructeur, get_mask | 
 | `my_models/model.py` | Reprend l'implémentation de BiSeNet | https://github.com/zllrunning/face-parsing.PyTorch |
 | `my_models/resnet.py` | Reprend l'implémentation de BiSeNet | https://github.com/zllrunning/face-parsing.PyTorch |
