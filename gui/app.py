@@ -133,7 +133,7 @@ class App(ctk.CTk):
 
     def main_loop(self):
         if self.iter == 0:
-            self.model.random_start(50)
+            self.model.random_start(100)
         
         loss, img = self.model.step()
             

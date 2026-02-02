@@ -19,8 +19,8 @@ class Inversor:
         self.parser = model_loader.FaceParsingManager(weight_path='my_models/79999_iter.pth', device=device)
         self.face_mask = self.parser.get_mask(img)
         self.x = torch.randn(1, 512, device=device, dtype=torch.float32, requires_grad=True)
-        self.optimizer = torch.optim.Adam([self.x], lr=0.05)
-        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=1000, gamma=0.5)
+        self.optimizer = torch.optim.Adam([self.x], lr=0.1)
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=500, gamma=0.8)
         self.alphas = {64:0.2, 512:0.8}
 
     def random_start(self, n_random = 50):
@@ -36,8 +36,8 @@ class Inversor:
             if loss.item() < best_loss:
                 best_loss = loss
                 self.x = z
-        self.optimizer = torch.optim.Adam([self.x], lr=0.05)
-        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=1000, gamma=0.5)
+        self.optimizer = torch.optim.Adam([self.x], lr=0.1)
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=500, gamma=0.8)
 
 
     def step(self):
