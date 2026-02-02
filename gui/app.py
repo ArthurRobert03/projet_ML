@@ -1,19 +1,12 @@
+import json
 import customtkinter as ctk
-import os
-import sys
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-
 from tkinter import filedialog
-from PIL import Image, ImageTk
+from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import core.train as train
 import utils.utils as utils
-
-scriptpath = "../"
-sys.path.append(os.path.abspath(scriptpath))
-import core.train as train
 
 ctk.set_appearance_mode("Dark")  # Dark / Light
 ctk.set_default_color_theme("green")  # Thème vert
@@ -24,6 +17,8 @@ class App(ctk.CTk):
 
         self.running = False
         self.loss = []
+        self.iter = 0
+        self.loaded = False
 
         self.title("GUI Inversion")
         self.geometry("1500x900")
@@ -31,7 +26,9 @@ class App(ctk.CTk):
 
         self.image = None
         self.photo = None
-        self.device = "cuda"
+        with open("config/config.json", "r") as f:
+            self.json_data = json.load(f)
+        self.device = self.json_data["device"]
         self.model = None
         self.build_ui()
         self.alpha = {16:1.0, 64:0.0, 512:0.0}
@@ -75,6 +72,7 @@ class App(ctk.CTk):
         ctk.CTkButton(btn_frame, text="Qual", command=self.qual_action, width=100).pack(pady=20)
         ctk.CTkButton(btn_frame, text="Resume", command=self.resume, width=100).pack(pady=20)
         ctk.CTkButton(btn_frame, text="Stop", command=self.stop_action, width=100).pack(pady=20)
+        ctk.CTkButton(btn_frame, text="Show Mask", command=self.toggle_mask, width=100).pack(pady=20)
 
         # ==== ZONE TARGET ====
         self.target_frame = ctk.CTkFrame(self, width=512, height=512, corner_radius=5)
@@ -183,10 +181,11 @@ class App(ctk.CTk):
 
             self.iter = 0
             self.loss = []
+            self.loaded = True
             
 
     def inv_action(self):
-        if not self.running and self.iter == 0:
+        if not self.running and self.iter == 0 and self.loaded:
             self.slider1.configure(state="disabled")
             self.slider2.configure(state="disabled")
             self.slider3.configure(state="disabled")
@@ -202,6 +201,10 @@ class App(ctk.CTk):
             self.running = True
             self.after(1, self.main_loop)
 
+    def toggle_mask(self):
+        if self.iter > 0:
+            self.model.toggle_mask()
+    
     def stop_action(self):
         if self.iter > 0:
             self.running = False
