@@ -7,7 +7,9 @@ import cv2
 import torch.nn.functional as F
 import utils.loss as loss_criterion
 
-device = "cuda"
+with open("config/config.json", "r") as f:
+    json_data = json.load(f)
+device = json_data["device"]
 
 class Inversor:
 
