@@ -6,6 +6,7 @@ import numpy as np
 import cv2
 import torch.nn.functional as F
 import utils.loss as loss_criterion
+import json
 
 with open("config/config.json", "r") as f:
     json_data = json.load(f)
@@ -17,6 +18,7 @@ class Inversor:
         self.model = model_loader.get_model()
         self.model = self.model.netG
         self.model.eval()
+        self.mask = False
         self.img_target = (img*2)-1
         self.parser = model_loader.FaceParsingManager(weight_path='my_models/79999_iter.pth', device=device)
         self.face_mask = self.parser.get_mask(img)
@@ -50,8 +52,10 @@ class Inversor:
         loss.backward()
         self.optimizer.step()
         self.scheduler.step()
-
-        return loss.item(), gen_vis[0].detach().cpu().permute(1,2,0).numpy()
+        if self.mask:
+            return loss.item(), (gen_vis*self.face_mask)[0].detach().cpu().permute(1,2,0).numpy()
+        else:
+            return loss.item(), gen_vis[0].detach().cpu().permute(1,2,0).numpy()
 
     def toggle_mask(self):
         self.mask = not self.mask

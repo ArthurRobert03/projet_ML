@@ -1,6 +1,7 @@
 import customtkinter as ctk
 import os
 import sys
+import json
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 from tkinter import filedialog
@@ -20,6 +21,8 @@ class App(ctk.CTk):
 
         self.running = False
         self.loss = []
+        self.iter = 0
+        self.loaded = False
 
         self.title("GUI Inversion")
         self.geometry("1500x900")
@@ -182,10 +185,11 @@ class App(ctk.CTk):
 
             self.iter = 0
             self.loss = []
+            self.loaded = True
             
 
     def inv_action(self):
-        if not self.running and self.iter == 0:
+        if not self.running and self.iter == 0 and self.loaded:
             self.slider1.configure(state="disabled")
             self.slider2.configure(state="disabled")
             self.slider3.configure(state="disabled")
@@ -202,7 +206,8 @@ class App(ctk.CTk):
             self.after(1, self.main_loop)
 
     def toggle_mask(self):
-        self.model.toggle_mask()
+        if self.iter > 0:
+            self.model.toggle_mask()
     
     def stop_action(self):
         if self.iter > 0:
