@@ -1,10 +1,6 @@
 import utils.utils as utils
 import my_models.load_model as model_loader
 import torch
-import matplotlib.pyplot as plt
-import numpy as np
-import cv2
-import torch.nn.functional as F
 import utils.loss as loss_criterion
 import json
 

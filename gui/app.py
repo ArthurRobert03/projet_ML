@@ -1,11 +1,7 @@
-import customtkinter as ctk
-import os
-import sys
 import json
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-
+import customtkinter as ctk
 from tkinter import filedialog
-from PIL import Image, ImageTk
+from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
